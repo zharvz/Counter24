@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Increase App</title>
+    <!-- Include web3.js from a CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.6/web3.min.js"></script>
+</head>
+
+<body>
+
+    <h1>Number Increase App</h1>
+    <p>Current Number: <span id="currentNumber"></span></p>
+
+    <label for="amount">Increase Amount:</label>
+    <input type="number" id="amount" min="1" value="1">
+    <button onclick="increaseNumber()">Increase Number</button>
+
+    <button onclick="connectMetaMask()">Connect to MetaMask</button>
+
+    <script>
+        let web3;
+        let contract; // Declare contract variable
+
+        // Get the current number from the contract
+        async function getCurrentNumber() {
+            const currentNumber = await contract.methods.number().call();
+            document.getElementById('currentNumber').textContent = currentNumber;
+        }
+
+        // Increase the number by the specified amount
+        async function increaseNumber() {
+            const amount = document.getElementById('amount').value;
+            await contract.methods.increaseNumber(amount).send({ from: web3.currentProvider.selectedAddress });
+            getCurrentNumber(); // Update the displayed number after the increase
+        }
+
+        // Connect to MetaMask
+        async function connectMetaMask() {
+            try {
+                await window.ethereum.enable(); // Request user permission to access their Ethereum accounts
+                web3 = new Web3(window.ethereum);
+
+                // Initialize contract after connecting to MetaMask
+                const contractAddress = 'YOUR_CONTRACT_ADDRESS';
+                const contractABI = YOUR_CONTRACT_ABI; // Replace with the actual ABI
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+
+                // Check if the connected network is BSC Testnet
+                const chainId = await web3.eth.getChainId();
+                if (chainId !== 97) {
+                    // Prompt the user to switch to BSC Testnet
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [
+                            {
+                                chainId: '0x61', // Hex representation of 97
+                                chainName: 'Binance Smart Chain Testnet',
+                                nativeCurrency: {
+                                    name: 'BNB',
+                                    symbol: 'bnb',
+                                    decimals: 18,
+                                },
+                                rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+                                blockExplorerUrls: ['https://testnet.bscscan.com/'],
+                            },
+                        ],
+                    });
+
+                    // The user may need to manually switch networks after adding
+                    console.log("Please switch to Binance Smart Chain Testnet");
+                }
+
+                getCurrentNumber();
+            } catch (error) {
+                console.error("Error connecting to MetaMask:", error.message);
+            }
+        }
+
+        // Initialize the app (optional)
+        // async function init() {
+        //     await connectMetaMask();
+        // }
+
+        // Call init when the page loads (optional)
+        // window.onload = init;
+    </script>
+
+</body>
+
+</html>
